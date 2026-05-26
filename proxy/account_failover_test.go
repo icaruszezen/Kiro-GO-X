@@ -9,6 +9,7 @@ func TestAccountFailureClassifiers(t *testing.T) {
 		msg  string
 	}{
 		{name: "quota", fn: isQuotaErrorMessage, msg: "HTTP 429: quota exhausted"},
+		{name: "amazonq quota", fn: isQuotaErrorMessage, msg: "quota exhausted on AmazonQ"},
 		{name: "overage", fn: isOverageErrorMessage, msg: "HTTP 402 from Kiro IDE: OVERAGE limit exceeded"},
 		{name: "suspension", fn: isSuspensionErrorMessage, msg: "Your User ID temporarily is suspended"},
 		{name: "profile", fn: isProfileUnavailableErrorMessage, msg: "no available Kiro profile"},

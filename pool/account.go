@@ -65,6 +65,20 @@ func (p *AccountPool) Reload() {
 	p.totalAccounts = len(enabled)
 }
 
+// ResetRoundRobin resets the weighted round-robin cursor.
+func (p *AccountPool) ResetRoundRobin() {
+	atomic.StoreUint64(&p.currentIndex, 0)
+}
+
+// ResetRuntimeState clears in-memory cooldown/error state and the round-robin cursor.
+func (p *AccountPool) ResetRuntimeState() {
+	p.mu.Lock()
+	p.cooldowns = make(map[string]time.Time)
+	p.errorCounts = make(map[string]int)
+	p.mu.Unlock()
+	p.ResetRoundRobin()
+}
+
 // GetNext 获取下一个可用账号（加权轮询）
 func (p *AccountPool) GetNext() *config.Account {
 	return p.GetNextExcluding(nil)

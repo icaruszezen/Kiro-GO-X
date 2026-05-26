@@ -117,6 +117,194 @@ func TestClaudeNonStreamRetriesNextAccountAfterPreResponseFailure(t *testing.T) 
 	}
 }
 
+type claudeNonStreamFailoverHarness struct {
+	handler       *Handler
+	requestTokens *[]string
+}
+
+func newClaudeNonStreamFailoverHarness(
+	t *testing.T,
+	accounts []config.Account,
+	preferredEndpoint string,
+	endpointFallback bool,
+	endpoints []kiroEndpoint,
+	upstream func(token string, w http.ResponseWriter, r *http.Request),
+) *claudeNonStreamFailoverHarness {
+	t.Helper()
+
+	cfgFile := t.TempDir() + "/config.json"
+	if err := config.Init(cfgFile); err != nil {
+		t.Fatalf("config.Init: %v", err)
+	}
+	for _, account := range accounts {
+		if err := config.AddAccount(account); err != nil {
+			t.Fatalf("add account %q: %v", account.ID, err)
+		}
+	}
+	if err := config.UpdatePreferredEndpoint(preferredEndpoint); err != nil {
+		t.Fatalf("set preferred endpoint: %v", err)
+	}
+	if err := config.UpdateEndpointFallback(endpointFallback); err != nil {
+		t.Fatalf("set endpoint fallback: %v", err)
+	}
+
+	requestTokens := make([]string, 0, len(accounts))
+	harness := &claudeNonStreamFailoverHarness{
+		requestTokens: &requestTokens,
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		*harness.requestTokens = append(*harness.requestTokens, token)
+		upstream(token, w, r)
+	}))
+	t.Cleanup(server.Close)
+
+	oldEndpoints := kiroEndpoints
+	kiroEndpoints = make([]kiroEndpoint, len(endpoints))
+	copy(kiroEndpoints, endpoints)
+	for i := range kiroEndpoints {
+		kiroEndpoints[i].URL = server.URL
+	}
+	t.Cleanup(func() { kiroEndpoints = oldEndpoints })
+
+	oldClient := kiroHttpStore.Load()
+	kiroHttpStore.Store(&http.Client{Timeout: time.Second, Transport: &http.Transport{}})
+	t.Cleanup(func() { kiroHttpStore.Store(oldClient) })
+
+	p := accountpool.GetPool()
+	p.Reload()
+	p.ResetRuntimeState()
+
+	harness.handler = &Handler{
+		pool:        p,
+		promptCache: newPromptCacheTracker(defaultPromptCacheTTL),
+	}
+	return harness
+}
+
+func (h *claudeNonStreamFailoverHarness) callClaudeNonStream(t *testing.T) *httptest.ResponseRecorder {
+	t.Helper()
+
+	payload := &KiroPayload{}
+	payload.ConversationState.CurrentMessage.UserInputMessage = KiroUserInputMessage{
+		Content: "hello",
+		ModelID: "claude-sonnet-4.5",
+		Origin:  "AI_EDITOR",
+	}
+
+	rec := httptest.NewRecorder()
+	h.handler.handleClaudeNonStream(rec, payload, "claude-sonnet-4.5", false, claudeThinkingResponseOptions{}, 1, nil)
+	return rec
+}
+
+func TestClaudeNonStreamRetriesThroughMoreThanThreeAccounts(t *testing.T) {
+	accounts := []config.Account{
+		{ID: "first", Enabled: true, AccessToken: "token-first", ProfileArn: "arn:aws:codewhisperer:profile/first"},
+		{ID: "second", Enabled: true, AccessToken: "token-second", ProfileArn: "arn:aws:codewhisperer:profile/second"},
+		{ID: "third", Enabled: true, AccessToken: "token-third", ProfileArn: "arn:aws:codewhisperer:profile/third"},
+		{ID: "fourth", Enabled: true, AccessToken: "token-fourth", ProfileArn: "arn:aws:codewhisperer:profile/fourth"},
+	}
+
+	harness := newClaudeNonStreamFailoverHarness(t, accounts, "kiro", false, []kiroEndpoint{{
+		Origin: "AI_EDITOR",
+		Name:   "test",
+	}}, func(token string, w http.ResponseWriter, r *http.Request) {
+		if token != "token-fourth" {
+			http.Error(w, "temporary upstream failure", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(awsEventStreamFrame(t, "assistantResponseEvent", map[string]interface{}{
+			"content": "fourth account succeeded",
+		}))
+	})
+
+	rec := harness.callClaudeNonStream(t)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected retry to succeed, status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if len(*harness.requestTokens) != 4 {
+		t.Fatalf("expected four account attempts, got %v", *harness.requestTokens)
+	}
+	if (*harness.requestTokens)[3] != "token-fourth" {
+		t.Fatalf("expected fourth account to succeed after three failures, got %v", *harness.requestTokens)
+	}
+
+	var resp ClaudeResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(resp.Content) == 0 || resp.Content[0].Text != "fourth account succeeded" {
+		t.Fatalf("expected fourth account response content, got %#v", resp.Content)
+	}
+}
+
+func TestClaudeNonStreamFailsAfterAllAccountsExhausted(t *testing.T) {
+	accounts := []config.Account{
+		{ID: "first", Enabled: true, AccessToken: "token-first", ProfileArn: "arn:aws:codewhisperer:profile/first"},
+		{ID: "second", Enabled: true, AccessToken: "token-second", ProfileArn: "arn:aws:codewhisperer:profile/second"},
+		{ID: "third", Enabled: true, AccessToken: "token-third", ProfileArn: "arn:aws:codewhisperer:profile/third"},
+		{ID: "fourth", Enabled: true, AccessToken: "token-fourth", ProfileArn: "arn:aws:codewhisperer:profile/fourth"},
+	}
+
+	harness := newClaudeNonStreamFailoverHarness(t, accounts, "kiro", false, []kiroEndpoint{{
+		Origin: "AI_EDITOR",
+		Name:   "test",
+	}}, func(token string, w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "temporary upstream failure", http.StatusInternalServerError)
+	})
+
+	rec := harness.callClaudeNonStream(t)
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("expected all accounts to fail, status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if len(*harness.requestTokens) != 4 {
+		t.Fatalf("expected four account attempts before failure, got %v", *harness.requestTokens)
+	}
+}
+
+func TestClaudeNonStreamRetriesNextAccountAfterAmazonQQuotaExhausted(t *testing.T) {
+	accounts := []config.Account{
+		{ID: "first", Enabled: true, AccessToken: "token-first", ProfileArn: "arn:aws:codewhisperer:profile/first"},
+		{ID: "second", Enabled: true, AccessToken: "token-second", ProfileArn: "arn:aws:codewhisperer:profile/second"},
+	}
+
+	harness := newClaudeNonStreamFailoverHarness(t, accounts, "amazonq", false, []kiroEndpoint{
+		{Origin: "AI_EDITOR", Name: "Kiro IDE"},
+		{Origin: "AI_EDITOR", Name: "CodeWhisperer", AmzTarget: "AmazonCodeWhispererStreamingService.GenerateAssistantResponse"},
+		{Origin: "AI_EDITOR", Name: "AmazonQ", AmzTarget: "AmazonQDeveloperStreamingService.SendMessage"},
+	}, func(token string, w http.ResponseWriter, r *http.Request) {
+		if token == "token-first" {
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(awsEventStreamFrame(t, "assistantResponseEvent", map[string]interface{}{
+			"content": "retried after amazonq quota",
+		}))
+	})
+
+	rec := harness.callClaudeNonStream(t)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected retry to succeed, status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if len(*harness.requestTokens) != 2 {
+		t.Fatalf("expected two account attempts, got %v", *harness.requestTokens)
+	}
+	if (*harness.requestTokens)[0] != "token-first" || (*harness.requestTokens)[1] != "token-second" {
+		t.Fatalf("expected quota failure on first account then second account retry, got %v", *harness.requestTokens)
+	}
+
+	var resp ClaudeResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(resp.Content) == 0 || resp.Content[0].Text != "retried after amazonq quota" {
+		t.Fatalf("expected retried response content, got %#v", resp.Content)
+	}
+}
+
 func TestThinkingSourceTagFirst(t *testing.T) {
 	var source thinkingStreamSource
 

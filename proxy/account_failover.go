@@ -7,7 +7,18 @@ import (
 	"time"
 )
 
-const maxAccountRetryAttempts = 3
+// maxAccountFailoverAttempts returns the upper bound for per-request account
+// failover attempts (one try per enabled account in the pool).
+func (h *Handler) maxAccountFailoverAttempts() int {
+	if h == nil || h.pool == nil {
+		return 1
+	}
+	n := h.pool.Count()
+	if n < 1 {
+		return 1
+	}
+	return n
+}
 
 func isQuotaErrorMessage(msg string) bool {
 	msg = strings.ToLower(msg)
