@@ -1,11 +1,11 @@
-package auth
+﻿package auth
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"kiro-go/config"
+	"kiro-go-x/config"
 	"net/http"
 	"time"
 )

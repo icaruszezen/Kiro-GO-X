@@ -1,4 +1,4 @@
-// Package main provides the entry point for Kiro API Proxy.
+﻿// Package main provides the entry point for Kiro API Proxy.
 //
 // Kiro API Proxy is a reverse proxy service that translates Kiro API requests
 // into OpenAI and Anthropic (Claude) compatible formats. Key features include:
@@ -15,10 +15,10 @@ package main
 
 import (
 	"fmt"
-	"kiro-go/config"
-	"kiro-go/logger"
-	"kiro-go/pool"
-	"kiro-go/proxy"
+	"kiro-go-x/config"
+	"kiro-go-x/logger"
+	"kiro-go-x/pool"
+	"kiro-go-x/proxy"
 	"log"
 	"net/http"
 	"os"
@@ -58,7 +58,7 @@ func main() {
 
 	// 启动服务器
 	addr := fmt.Sprintf("%s:%d", config.GetHost(), config.GetPort())
-	logger.Infof("Kiro-Go starting on http://%s (log level: %s)", addr, logger.LevelName(logger.GetLevel()))
+	logger.Infof("Kiro-GO-X starting on http://%s (log level: %s)", addr, logger.LevelName(logger.GetLevel()))
 	logger.Infof("Admin panel: http://%s/admin", addr)
 	logger.Infof("Claude API: http://%s/v1/messages", addr)
 	logger.Infof("OpenAI API: http://%s/v1/chat/completions", addr)

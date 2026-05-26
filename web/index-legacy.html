@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kiro-Go</title>
+    <title>Kiro-GO-X</title>
     <style>
         * {
             box-sizing: border-box;
@@ -859,7 +859,7 @@
             </div>
             <h1 class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>Kiro-Go</h1>
+                </svg>Kiro-GO-X</h1>
             <p data-i18n="login.subtitle"></p>
             <div class="form-group">
                 <label data-i18n="login.password"></label>
@@ -875,7 +875,7 @@
         <div class="header">
             <h1 class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>Kiro-Go</h1>
+                </svg>Kiro-GO-X</h1>
             <div class="header-right">
                 <div class="lang-switch">
                     <button class="lang-btn" data-lang="zh" onclick="setLang('zh')">中文</button>
@@ -2985,12 +2985,12 @@
 
         async function checkUpdate(manual) {
             try {
-                const res = await fetch('https://raw.githubusercontent.com/Quorinex/Kiro-Go/main/version.json?t=' + Date.now());
+                const res = await fetch('https://raw.githubusercontent.com/icaruszezen/Kiro-GO-X/main/version.json?t=' + Date.now());
                 if (!res.ok) throw new Error('Fetch failed');
                 const d = await res.json();
                 const latestVersion = (d.version || '').replace(/^v/, '');
                 if (latestVersion && latestVersion !== currentVersion && compareVersions(latestVersion, currentVersion) > 0) {
-                    showUpdateModal(latestVersion, d.download || 'https://github.com/Quorinex/Kiro-Go', d.changelog || '');
+                    showUpdateModal(latestVersion, d.download || 'https://github.com/icaruszezen/Kiro-GO-X', d.changelog || '');
                 } else if (manual) {
                     alert(t('update.upToDate') + ' (v' + currentVersion + ')');
                 }

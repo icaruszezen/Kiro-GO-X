@@ -1,7 +1,7 @@
-package proxy
+﻿package proxy
 
 import (
-	"kiro-go/config"
+	"kiro-go-x/config"
 	"strings"
 	"testing"
 )

@@ -1,9 +1,9 @@
-// Package pool 账号池管理
+﻿// Package pool 账号池管理
 // 实现轮询负载均衡、错误冷却、Token 刷新
 package pool
 
 import (
-	"kiro-go/config"
+	"kiro-go-x/config"
 	"strings"
 	"sync"
 	"sync/atomic"

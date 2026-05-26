@@ -1,10 +1,10 @@
-package proxy
+﻿package proxy
 
 import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"kiro-go/config"
+	"kiro-go-x/config"
 	"net/http"
 	"net/url"
 	"testing"

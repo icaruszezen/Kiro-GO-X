@@ -1,9 +1,9 @@
-package proxy
+﻿package proxy
 
 import (
 	"encoding/base64"
 	"encoding/json"
-	"kiro-go/config"
+	"kiro-go-x/config"
 	"regexp"
 	"strings"
 	"time"

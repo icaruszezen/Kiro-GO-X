@@ -1,4 +1,4 @@
-module kiro-go
+module kiro-go-x
 
 go 1.21
 

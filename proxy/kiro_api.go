@@ -1,12 +1,12 @@
-package proxy
+﻿package proxy
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"kiro-go/auth"
-	"kiro-go/config"
-	"kiro-go/logger"
+	"kiro-go-x/auth"
+	"kiro-go-x/config"
+	"kiro-go-x/logger"
 	"net/http"
 	neturl "net/url"
 	"strings"

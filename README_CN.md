@@ -1,4 +1,4 @@
-# Kiro-Go
+# Kiro-GO-X
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker)](https://www.docker.com/)
@@ -24,8 +24,8 @@
 ### Docker Compose（推荐）
 
 ```bash
-git clone https://github.com/Quorinex/Kiro-Go.git
-cd Kiro-Go
+git clone https://github.com/icaruszezen/Kiro-GO-X.git
+cd Kiro-GO-X
 mkdir -p data
 docker-compose up -d
 ```
@@ -34,21 +34,21 @@ docker-compose up -d
 
 ```bash
 docker run -d \
-  --name kiro-go \
+  --name kiro-go-x \
   -p 8080:8080 \
   -e ADMIN_PASSWORD=your_secure_password \
   -v /path/to/data:/app/data \
   --restart unless-stopped \
-  ghcr.io/quorinex/kiro-go:latest
+  ghcr.io/icaruszezen/kiro-go-x:latest
 ```
 
 ### 源码编译
 
 ```bash
-git clone https://github.com/Quorinex/Kiro-Go.git
-cd Kiro-Go
-go build -o kiro-go .
-./kiro-go
+git clone https://github.com/icaruszezen/Kiro-GO-X.git
+cd Kiro-GO-X
+go build -o kiro-go-x .
+./kiro-go-x
 ```
 
 首次运行会在 `data/config.json` 自动生成配置，挂载 `/app/data` 以持久化。默认管理密码为 `changeme`，生产环境请务必通过 `ADMIN_PASSWORD` 环境变量或在管理面板中修改。

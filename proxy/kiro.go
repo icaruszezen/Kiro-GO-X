@@ -1,4 +1,4 @@
-// Package proxy is the core proxy layer for the Kiro API.
+﻿// Package proxy is the core proxy layer for the Kiro API.
 // It handles streaming API calls to the Kiro backend and parses AWS Event Stream responses.
 package proxy
 
@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"kiro-go/config"
-	"kiro-go/logger"
+	"kiro-go-x/config"
+	"kiro-go-x/logger"
 	"net/http"
 	"net/url"
 	"strconv"

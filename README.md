@@ -1,4 +1,4 @@
-# Kiro-Go
+# Kiro-GO-X
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker)](https://www.docker.com/)
@@ -24,8 +24,8 @@ If this project helps you, a Star would mean a lot.
 ### Docker Compose (Recommended)
 
 ```bash
-git clone https://github.com/Quorinex/Kiro-Go.git
-cd Kiro-Go
+git clone https://github.com/icaruszezen/Kiro-GO-X.git
+cd Kiro-GO-X
 mkdir -p data
 docker-compose up -d
 ```
@@ -34,21 +34,21 @@ docker-compose up -d
 
 ```bash
 docker run -d \
-  --name kiro-go \
+  --name kiro-go-x \
   -p 8080:8080 \
   -e ADMIN_PASSWORD=your_secure_password \
   -v /path/to/data:/app/data \
   --restart unless-stopped \
-  ghcr.io/quorinex/kiro-go:latest
+  ghcr.io/icaruszezen/kiro-go-x:latest
 ```
 
 ### Build from Source
 
 ```bash
-git clone https://github.com/Quorinex/Kiro-Go.git
-cd Kiro-Go
-go build -o kiro-go .
-./kiro-go
+git clone https://github.com/icaruszezen/Kiro-GO-X.git
+cd Kiro-GO-X
+go build -o kiro-go-x .
+./kiro-go-x
 ```
 
 Config is auto-created at `data/config.json`. Mount `/app/data` for persistence. The default admin password is `changeme` — override it via the `ADMIN_PASSWORD` env var or change it in the admin panel before going to production.

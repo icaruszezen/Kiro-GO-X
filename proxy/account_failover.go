@@ -1,8 +1,8 @@
-package proxy
+﻿package proxy
 
 import (
-	"kiro-go/config"
-	"kiro-go/logger"
+	"kiro-go-x/config"
+	"kiro-go-x/logger"
 	"strings"
 	"time"
 )
